@@ -171,7 +171,7 @@ char FP50::get_pump_stage(AsyncPT &pt, double &pump) {
   static String tmp;
   PT_BEGIN(&pt.pt);
   LOGV("Getting pump stage.");
-  queue_command_with_response("IN_SP_04\r", pt.sem, tmp);
+  queue_command_with_response("IN_SP_07\r", pt.sem, tmp);
   PT_SEM_WAIT(&pt.pt, &pt.sem);
   pump = tmp.toDouble();
   PT_END(&pt.pt);

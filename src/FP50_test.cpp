@@ -98,6 +98,27 @@ PT_THREAD(run_fp50_tests(struct pt* pt, FP50& fp50)) {
         PT_YIELD_UNTIL(pt, millis() - now > 5000);
       }
     }
+
+    // temp and power
+    {
+      for (i = 0; i < 10; ++i) {
+        now = millis();
+        pt1.init();
+        PT_SPAWN(pt, &pt1.pt, fp50.get_bath_temperature(pt1, dtmp));
+        LOGNF("Get temperature: %f (%lu)", dtmp, millis() - now);
+        now = millis();
+        PT_YIELD_UNTIL(pt, millis() - now > 1000);
+      }
+
+      for (i = 0; i < 10; ++i) {
+        now = millis();
+        pt1.init();
+        PT_SPAWN(pt, &pt1.pt, fp50.get_heating_power(pt1, dtmp));
+        LOGNF("Get power: %f (%lu)", dtmp, millis() - now);
+        now = millis();
+        PT_YIELD_UNTIL(pt, millis() - now > 1000);
+      }
+    }
   }
 #endif
   PT_END(pt);
