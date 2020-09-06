@@ -4,15 +4,18 @@
 
 #ifndef JULABO_FP50_DS18B20_CONTROL_FP50_H
 #define JULABO_FP50_DS18B20_CONTROL_FP50_H
+#include <circular_queue/circular_queue.h>
 #include "Arduino.h"
 #include "ArduinoLog.h"
 #include "pt/pt-sem.h"
 #include "pt/pt.h"
-#include <circular_queue/circular_queue.h>
 #define QUEUE_SIZE 10
 #define RECV_BUFFER_SIZE 300
 #define COMMAND_TIME_GAP_MS 250
 #define IN_COMMAND_TIME_GAP_MS 10
+#define IN_COMMAND_TIMEOUT_MS 500
+// When in command is waiting. Do not send more commands.
+#define IN_COMMAND_EXCLUSIVE 1
 
 enum SelfTuning {
   Off = 0,
@@ -28,23 +31,26 @@ enum Dynamics {
 struct Resolvable {
   struct pt_sem *sem;
   String *dest;
+  String identifier;
+  ulong timestamp;
 };
 
 struct AsyncPT {
-  struct pt pt;
-  struct pt_sem sem;
-  AsyncPT() {
+  struct pt pt {};
+  struct pt_sem sem {};
+  void init() {
     PT_INIT(&pt);
     PT_SEM_INIT(&sem, 0);
   }
+  AsyncPT() { init(); }
 };
 
 // FP50 should be put in software handshake mode
 class FP50 {
-public:
-  FP50(Stream &serial);
+ public:
+  explicit FP50(Stream &serial);
 
-public:
+ public:
   // OUT commands
   /// Use working temperature of setpointN. Used command: OUT_MODE_01
   /// \param id
@@ -82,7 +88,7 @@ public:
   /// \param pressure
   void set_pump_pressure(uint8 pressure);
 
-public:
+ public:
   // Status and version
   /// Get version (VERSION)
   /// \return
@@ -90,32 +96,32 @@ public:
 
   /// Get status (STATUS)
   /// \return
-  String get_status();
+  PT_THREAD(get_status(AsyncPT &pt, String &status));
 
-public:
+ public:
   // IN commands
 
   /// Current bath temperature (IN_PV_00)
   /// \return
-  double get_bath_temperature();
+  PT_THREAD(get_bath_temperature(AsyncPT &pt, double &temp));
 
   /// Heating power (%) (IN_PV_01)
   /// \return
-  double get_heating_power();
+  PT_THREAD(get_heating_power(AsyncPT &pt, double &power));
 
   /// Get working temperature setpoint N (IN_SP_00 IN_SP_01 IN_SP_02)
   /// \param id
   /// \return
-  double get_setpoint(uint8 id = 0);
+  PT_THREAD(get_setpoint(AsyncPT &pt, uint8 id, double &setpoint));
 
-  double get_overtemp();
-  double get_subtemp();
+  PT_THREAD(get_overtemp(AsyncPT &pt, double &temp));
+  PT_THREAD(get_subtemp(AsyncPT &pt, double &temp));
 
   /// IN_SP_07
   /// \return
-  double get_pump_stage();
+  PT_THREAD(get_pump_stage(AsyncPT &pt, double &pump));
 
-private:
+ private:
   Stream &serial;
   bool xon = true;
   circular_queue<String> cmdQueue;
@@ -123,14 +129,14 @@ private:
   uint64 lastSentTime;
   circular_queue<char> buffer;
 
-private:
+ private:
   void queue_command(String command);
   void queue_command_with_response(String command, pt_sem &sem, String &recv);
 
-public:
+ public:
   // Tasks
   PT_THREAD(daemon(struct pt *pt));
   void begin();
 };
 
-#endif // JULABO_FP50_DS18B20_CONTROL_FP50_H
+#endif  // JULABO_FP50_DS18B20_CONTROL_FP50_H

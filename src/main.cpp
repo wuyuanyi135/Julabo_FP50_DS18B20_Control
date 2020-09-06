@@ -1,8 +1,9 @@
+#include <Arduino.h>
+#include <FP50_test.h>
+#include <SoftwareSerial.h>
 #include "FP50.h"
 #include "GDBStub.h"
 #include "pt/pt.h"
-#include <Arduino.h>
-#include <SoftwareSerial.h>
 
 SoftwareSerial fp50Serial;
 FP50 fp50(fp50Serial);
@@ -27,17 +28,20 @@ PT_THREAD(print_info(struct pt *pt)) {
 /// \return
 PT_THREAD(main_routine(struct pt *pt)) {
   static struct pt ptInfo;
+  static struct pt ptTest;
   PT_BEGIN(pt);
 
   // Print information
   PT_SPAWN(pt, &ptInfo, print_info(&ptInfo));
+
+  PT_SPAWN(pt, &ptTest, run_fp50_tests(&ptTest, fp50));
 
   // End of main routine.
   Log.verbose("Main routine exits." CR);
   while (true) {
     PT_YIELD(pt);
   }
-  PT_END(pt); // PT_END can revive the pt!!
+  PT_END(pt);  // PT_END can revive the pt!!
 }
 
 PT_THREAD(background_routine(struct pt *pt)) {
