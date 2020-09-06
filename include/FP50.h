@@ -4,11 +4,13 @@
 
 #ifndef JULABO_FP50_DS18B20_CONTROL_FP50_H
 #define JULABO_FP50_DS18B20_CONTROL_FP50_H
-#include <circular_queue/circular_queue.h>
 #include "Arduino.h"
 #include "ArduinoLog.h"
+#include "pt/pt-sem.h"
 #include "pt/pt.h"
+#include <circular_queue/circular_queue.h>
 #define QUEUE_SIZE 10
+#define RECV_BUFFER_SIZE 300
 #define COMMAND_TIME_GAP_MS 250
 #define IN_COMMAND_TIME_GAP_MS 10
 
@@ -23,12 +25,26 @@ enum Dynamics {
   Standard,
 };
 
+struct Resolvable {
+  struct pt_sem *sem;
+  String *dest;
+};
+
+struct AsyncPT {
+  struct pt pt;
+  struct pt_sem sem;
+  AsyncPT() {
+    PT_INIT(&pt);
+    PT_SEM_INIT(&sem, 0);
+  }
+};
+
 // FP50 should be put in software handshake mode
 class FP50 {
- public:
-  FP50(Stream& serial);
+public:
+  FP50(Stream &serial);
 
- public:
+public:
   // OUT commands
   /// Use working temperature of setpointN. Used command: OUT_MODE_01
   /// \param id
@@ -66,17 +82,17 @@ class FP50 {
   /// \param pressure
   void set_pump_pressure(uint8 pressure);
 
- public:
+public:
   // Status and version
   /// Get version (VERSION)
   /// \return
-  PT_THREAD(get_version(struct pt* pt, String& version));
+  PT_THREAD(get_version(AsyncPT &pt, String &version));
 
   /// Get status (STATUS)
   /// \return
   String get_status();
 
- public:
+public:
   // IN commands
 
   /// Current bath temperature (IN_PV_00)
@@ -99,19 +115,22 @@ class FP50 {
   /// \return
   double get_pump_stage();
 
- private:
-  Stream& serial;
+private:
+  Stream &serial;
+  bool xon = true;
   circular_queue<String> cmdQueue;
+  circular_queue<Resolvable> semQueue;
   uint64 lastSentTime;
+  circular_queue<char> buffer;
 
-
-
- private:
+private:
   void queue_command(String command);
+  void queue_command_with_response(String command, pt_sem &sem, String &recv);
 
- public:
+public:
   // Tasks
   PT_THREAD(daemon(struct pt *pt));
+  void begin();
 };
 
-#endif  // JULABO_FP50_DS18B20_CONTROL_FP50_H
+#endif // JULABO_FP50_DS18B20_CONTROL_FP50_H
