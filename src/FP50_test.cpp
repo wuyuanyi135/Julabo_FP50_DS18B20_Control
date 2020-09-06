@@ -3,6 +3,7 @@
 //
 
 #include "FP50_test.h"
+#include "debug.h"
 PT_THREAD(run_fp50_tests(struct pt* pt, FP50& fp50)) {
   static AsyncPT pt1;
   static String tmp;
@@ -11,52 +12,50 @@ PT_THREAD(run_fp50_tests(struct pt* pt, FP50& fp50)) {
   static int i;
   PT_BEGIN(pt);
 #ifndef FP50_TEST_DISABLED
-  Log.notice("=== Running FP50 Test Program === " CR);
+  LOGN("=== Running FP50 Test Program === ");
   now = millis();
   pt1.init();
-  fp50.get_version(pt1, tmp);
-  PT_SEM_WAIT(pt, &pt1.sem);
-  Log.notice("FP50 version: %s (%u)" CR, tmp.c_str(), millis() - now);
+  tmp.clear();
+  PT_SPAWN(pt, &pt1.pt, fp50.get_version(pt1, tmp));
+  LOGNF("FP50 version: %s (%lu)", tmp.c_str(), millis() - now);
   now = millis();
-  PT_YIELD_UNTIL(pt, millis() - now > 1000);
-
+  PT_YIELD_UNTIL(pt, millis() - now > 5000);
   now = millis();
   pt1.init();
-  fp50.get_status(pt1, tmp);
-  PT_SEM_WAIT(pt, &pt1.sem);
-  Log.notice("Status: %s (%u)" CR, tmp.c_str(), millis() - now);
+  PT_SPAWN(pt, &pt1.pt, fp50.get_status(pt1, tmp));
+  LOGNF("Status: %s (%lu)", tmp.c_str(), millis() - now);
   now = millis();
-  PT_YIELD_UNTIL(pt, millis() - now > 1000);
+  PT_YIELD_UNTIL(pt, millis() - now > 5000);
 
   // On Off
   {
     now = millis();
     fp50.switch_power(false);
-    Log.notice("Switched off (%u)" CR, millis() - now);
+    LOGNF("Switched off (%lu)", millis() - now);
     now = millis();
-    PT_YIELD_UNTIL(pt, millis() - now > 3000);
+    PT_YIELD_UNTIL(pt, millis() - now > 5000);
 
     now = millis();
     pt1.init();
-    fp50.get_status(pt1, tmp);
-    PT_SEM_WAIT(pt, &pt1.sem);
-    Log.notice("Status: %s (%u)" CR, tmp.c_str(), millis() - now);
+    tmp.clear();
+    PT_SPAWN(pt, &pt1.pt, fp50.get_status(pt1, tmp));
+    LOGNF("Status: %s (%lu)", tmp.c_str(), millis() - now);
     now = millis();
-    PT_YIELD_UNTIL(pt, millis() - now > 1000);
+    PT_YIELD_UNTIL(pt, millis() - now > 5000);
 
     now = millis();
     fp50.switch_power(true);
-    Log.notice("Switched on (%u)" CR, millis() - now);
+    LOGNF("Switched on (%lu)", millis() - now);
     now = millis();
-    PT_YIELD_UNTIL(pt, millis() - now > 3000);
+    PT_YIELD_UNTIL(pt, millis() - now > 5000);
 
     now = millis();
     pt1.init();
-    fp50.get_status(pt1, tmp);
-    PT_SEM_WAIT(pt, &pt1.sem);
-    Log.notice("Status: %s (%u)" CR, tmp.c_str(), millis() - now);
+    tmp.clear();
+    PT_SPAWN(pt, &pt1.pt, fp50.get_status(pt1, tmp));
+    LOGNF("Status: %s (%lu)", tmp.c_str(), millis() - now);
     now = millis();
-    PT_YIELD_UNTIL(pt, millis() - now > 1000);
+    PT_YIELD_UNTIL(pt, millis() - now > 5000);
   }
 
   // set points
@@ -64,23 +63,22 @@ PT_THREAD(run_fp50_tests(struct pt* pt, FP50& fp50)) {
     for (i = 0; i < 3; ++i) {
       now = millis();
       fp50.set_setpoint(27.0 + i, i);
-      Log.notice("Setpoint %d set to: %D (%u)" CR, i, 27.0 + i, millis() - now);
+      LOGNF("Setpoint %d set to: %f (%lu)", i, 27.0 + i, millis() - now);
       now = millis();
-      PT_YIELD_UNTIL(pt, millis() - now > 3000);
+      PT_YIELD_UNTIL(pt, millis() - now > 5000);
 
       now = millis();
       pt1.init();
-      fp50.get_setpoint(pt1, i, dtmp);
-      PT_SEM_WAIT(pt, &pt1.sem);
-      Log.notice("Get setpoint %d: %D (%u)" CR, i, dtmp, millis() - now);
+      PT_SPAWN(pt, &pt1.pt, fp50.get_setpoint(pt1, i, dtmp));
+      LOGNF("Get setpoint %d: %f (%lu)", i, dtmp, millis() - now);
       now = millis();
-      PT_YIELD_UNTIL(pt, millis() - now > 1000);
+      PT_YIELD_UNTIL(pt, millis() - now > 5000);
 
       now = millis();
       fp50.select_setpoint(i);
-      Log.notice("Select setpoint %d (%u)" CR, i, millis() - now);
+      LOGNF("Select setpoint %d (%lu)", i, millis() - now);
       now = millis();
-      PT_YIELD_UNTIL(pt, millis() - now > 3000);
+      PT_YIELD_UNTIL(pt, millis() - now > 5000);
     }
 
     // Pump stage
@@ -88,17 +86,16 @@ PT_THREAD(run_fp50_tests(struct pt* pt, FP50& fp50)) {
       for (i = 1; i < 4; i++) {
         now = millis();
         fp50.set_pump_pressure(i);
-        Log.notice("Pump stage: %d (%u)" CR, i, millis() - now);
+        LOGNF("Pump stage: %d (%lu)", i, millis() - now);
         now = millis();
         PT_YIELD_UNTIL(pt, millis() - now > 5000);
 
         now = millis();
         pt1.init();
-        fp50.get_pump_stage(pt1, dtmp);
-        PT_SEM_WAIT(pt, &pt1.sem);
-        Log.notice("Get pump stage: %D (%u)" CR, dtmp, millis() - now);
+        PT_SPAWN(pt, &pt1.pt, fp50.get_pump_stage(pt1, dtmp));
+        LOGNF("Get pump stage: %f (%lu)", dtmp, millis() - now);
         now = millis();
-        PT_YIELD_UNTIL(pt, millis() - now > 1000);
+        PT_YIELD_UNTIL(pt, millis() - now > 5000);
       }
     }
   }

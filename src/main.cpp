@@ -3,7 +3,7 @@
 #include <SoftwareSerial.h>
 #include "FP50.h"
 #include "GDBStub.h"
-#include "pt/pt.h"
+#include "debug.h"
 
 SoftwareSerial fp50Serial;
 FP50 fp50(fp50Serial);
@@ -16,10 +16,10 @@ PT_THREAD(print_info(struct pt *pt)) {
   static String ver;
 
   PT_BEGIN(pt);
-  Log.notice("Requesting FP50 Version..." CR);
+  LOGN("Requesting FP50 Version...");
 
   PT_SPAWN(pt, &pt1.pt, fp50.get_version(pt1, ver));
-  Log.notice("FP50 Version: %s" CR, ver.c_str());
+  LOGNF("FP50 Version: %s", ver.c_str());
   PT_END(pt);
 }
 
@@ -37,7 +37,7 @@ PT_THREAD(main_routine(struct pt *pt)) {
   PT_SPAWN(pt, &ptTest, run_fp50_tests(&ptTest, fp50));
 
   // End of main routine.
-  Log.verbose("Main routine exits." CR);
+  LOGV("Main routine exits.");
   while (true) {
     PT_YIELD(pt);
   }
@@ -58,14 +58,13 @@ PT_THREAD(background_routine(struct pt *pt)) {
 
 void setup() {
   Serial.begin(115200);
-  //  gdb_init();
+//  gdb_init();
 
-  Log.begin(LOG_LEVEL_VERBOSE, &Serial);
-  Log.verbose("Log module initialized." CR);
   fp50Serial.begin(9600, SWSERIAL_8N1, D5, D6, false, 100, 100);
   fp50Serial.setTimeout(50);
   fp50.begin();
-  Log.verbose("fp50 serial initialized." CR);
+
+  LOGV("fp50 serial initialized.");
   PT_INIT(&ptMain);
   PT_INIT(&ptBackground);
 }

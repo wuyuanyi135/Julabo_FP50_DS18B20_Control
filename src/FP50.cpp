@@ -10,7 +10,7 @@ FP50::FP50(Stream &serial)
       buffer((size_t)RECV_BUFFER_SIZE) {}
 
 void FP50::begin() {
-  Log.verbose("Receive buffer capacity: %d" CR, (int)buffer.capacity());
+  LOGVF("Receive buffer capacity: %d", (int)buffer.capacity());
 }
 
 void FP50::select_setpoint(int id) {
@@ -19,7 +19,7 @@ void FP50::select_setpoint(int id) {
   command = "OUT_MODE_01 ";
   command += id;
   command += "\r";
-  Log.verbose("Select setpoint %d." CR, id);
+  LOGVF("Select setpoint %d.", id);
   queue_command(command);
 }
 void FP50::set_self_tuning(SelfTuning opt) {
@@ -27,7 +27,7 @@ void FP50::set_self_tuning(SelfTuning opt) {
   command = "OUT_MODE_02 ";
   command += (int)opt;
   command += "\r";
-  Log.verbose("Set self tuning: %d." CR, opt);
+  LOGVF("Set self tuning: %d.", opt);
   queue_command(command);
 }
 void FP50::switch_power(bool start) {
@@ -35,7 +35,7 @@ void FP50::switch_power(bool start) {
   command = "OUT_MODE_05 ";
   command += (int)start;
   command += "\r";
-  Log.verbose("Switch power: %d." CR, start);
+  LOGVF("Switch power: %d.", start);
   queue_command(command);
 }
 void FP50::set_dynamics(Dynamics opt) {
@@ -43,7 +43,7 @@ void FP50::set_dynamics(Dynamics opt) {
   command = "OUT_MODE_08 ";
   command += (int)opt;
   command += "\r";
-  Log.verbose("Set dynamics: %d." CR, opt);
+  LOGVF("Set dynamics: %d.", opt);
   queue_command(command);
 }
 
@@ -57,7 +57,7 @@ void FP50::set_setpoint(double temp, uint8 id) {
   command += " ";
   command += buf;
   command += "\r";
-  Log.verbose("Set setpoint %d: %D." CR, id, temp);
+  LOGVF("Set setpoint %d: %f.", id, temp);
   queue_command(command);
 }
 
@@ -68,7 +68,7 @@ void FP50::set_overtemp(double overtemp) {
   command = "OUT_SP_03 ";
   command += buf;
   command += "\r";
-  Log.verbose("Set overtemp: %D." CR, overtemp);
+  LOGVF("Set overtemp: %f.", overtemp);
   queue_command(command);
 }
 
@@ -79,7 +79,7 @@ void FP50::set_subtemp(double subtemp) {
   command = "OUT_SP_04 ";
   command += buf;
   command += "\r";
-  Log.verbose("Set subtemp: %D." CR, subtemp);
+  LOGVF("Set subtemp: %f.", subtemp);
   queue_command(command);
 }
 
@@ -90,13 +90,13 @@ void FP50::set_pump_pressure(uint8 pressure) {
   command += " ";
   command += pressure;
   command += "\r";
-  Log.verbose("Set pump pressure: %d." CR, pressure);
+  LOGVF("Set pump pressure: %d.", pressure);
   queue_command(command);
 }
 
 char FP50::get_version(AsyncPT &pt, String &version) {
   PT_BEGIN(&pt.pt);
-  Log.verbose("Getting version." CR);
+  LOGV("Getting version.");
   queue_command_with_response("VERSION\r", pt.sem, version);
   PT_SEM_WAIT(&pt.pt, &pt.sem);
   PT_END(&pt.pt);
@@ -104,7 +104,7 @@ char FP50::get_version(AsyncPT &pt, String &version) {
 
 char FP50::get_status(AsyncPT &pt, String &status) {
   PT_BEGIN(&pt.pt);
-  Log.verbose("Getting status." CR);
+  LOGV("Getting status.");
   queue_command_with_response("STATUS\r", pt.sem, status);
   PT_SEM_WAIT(&pt.pt, &pt.sem);
   PT_END(&pt.pt);
@@ -113,7 +113,7 @@ char FP50::get_status(AsyncPT &pt, String &status) {
 char FP50::get_bath_temperature(AsyncPT &pt, double &temp) {
   static String sTemp;
   PT_BEGIN(&pt.pt);
-  Log.verbose("Getting bath temperature." CR);
+  LOGV("Getting bath temperature.");
   queue_command_with_response("IN_PV_00\r", pt.sem, sTemp);
   PT_SEM_WAIT(&pt.pt, &pt.sem);
   temp = sTemp.toDouble();
@@ -123,7 +123,7 @@ char FP50::get_bath_temperature(AsyncPT &pt, double &temp) {
 char FP50::get_heating_power(AsyncPT &pt, double &power) {
   static String sPower;
   PT_BEGIN(&pt.pt);
-  Log.verbose("Getting heating power." CR);
+  LOGV("Getting heating power.");
   queue_command_with_response("IN_PV_01\r", pt.sem, sPower);
   PT_SEM_WAIT(&pt.pt, &pt.sem);
   power = sPower.toDouble();
@@ -140,7 +140,7 @@ char FP50::get_setpoint(AsyncPT &pt, uint8 id, double &setpoint) {
   req = "IN_SP_0";
   req += id;
   req += "\r";
-  Log.verbose("Getting setpoint." CR);
+  LOGV("Getting setpoint.");
   queue_command_with_response(req, pt.sem, sPoint);
   PT_SEM_WAIT(&pt.pt, &pt.sem);
   setpoint = sPoint.toDouble();
@@ -150,7 +150,7 @@ char FP50::get_setpoint(AsyncPT &pt, uint8 id, double &setpoint) {
 char FP50::get_overtemp(AsyncPT &pt, double &temp) {
   static String tmp;
   PT_BEGIN(&pt.pt);
-  Log.verbose("Getting overtemp." CR);
+  LOGV("Getting overtemp.");
   queue_command_with_response("IN_SP_03\r", pt.sem, tmp);
   PT_SEM_WAIT(&pt.pt, &pt.sem);
   temp = tmp.toDouble();
@@ -160,7 +160,7 @@ char FP50::get_overtemp(AsyncPT &pt, double &temp) {
 char FP50::get_subtemp(AsyncPT &pt, double &temp) {
   static String tmp;
   PT_BEGIN(&pt.pt);
-  Log.verbose("Getting subtemp." CR);
+  LOGV("Getting subtemp.");
   queue_command_with_response("IN_SP_04\r", pt.sem, tmp);
   PT_SEM_WAIT(&pt.pt, &pt.sem);
   temp = tmp.toDouble();
@@ -170,7 +170,7 @@ char FP50::get_subtemp(AsyncPT &pt, double &temp) {
 char FP50::get_pump_stage(AsyncPT &pt, double &pump) {
   static String tmp;
   PT_BEGIN(&pt.pt);
-  Log.verbose("Getting pump stage." CR);
+  LOGV("Getting pump stage.");
   queue_command_with_response("IN_SP_04\r", pt.sem, tmp);
   PT_SEM_WAIT(&pt.pt, &pt.sem);
   pump = tmp.toDouble();
@@ -181,8 +181,7 @@ void FP50::queue_command(String command) { cmdQueue.push(command); }
 
 char FP50::daemon(struct pt *pt) {
   static int recv;
-  static String response;
-
+  static char response[128];
   PT_BEGIN(pt);
 
   while (true) {
@@ -190,11 +189,10 @@ char FP50::daemon(struct pt *pt) {
     {
       if (semQueue.available()) {
         const Resolvable &resolvable = semQueue.peek();
-        String ident = resolvable.identifier;
-        ident.trim();
         if (millis() - resolvable.timestamp > IN_COMMAND_TIMEOUT_MS) {
-          Log.warning("Command [%s] timed out!" CR,
-                      ident.c_str());
+          String ident = resolvable.identifier;
+          ident.trim();
+          LOGEF("Command [%s] timed out!", ident.c_str());
           PT_SEM_SIGNAL(pt, resolvable.sem);
           semQueue.pop();
           buffer.flush();
@@ -209,42 +207,41 @@ char FP50::daemon(struct pt *pt) {
         // Is it flow control char?
         if ((char)recv == 0x13) {
           xon = false;
-          Log.verbose("XOFF" CR);
+          LOGV("XOFF");
           continue;
         } else if ((char)recv == 0x11) {
           xon = true;
-          Log.verbose("XON" CR);
+          LOGV("XON");
           continue;
         }
 
         // Is it end of transaction?
         if ((char)recv == '\n') {
           const size_t size = buffer.available();
-          Log.verbose("CR received. Size=%d" CR, size);
+          LOGVF("CR received. Size=%zu", size);
 
-          response.reserve(size);
-          buffer.pop_n(response.begin(), size);
-          response.trim();
+          buffer.pop_n(response, size);
+          response[size + 1] = '\0'; // overwrite LF
           if (semQueue.available()) {
             const Resolvable &p = semQueue.pop();
-            Log.verbose("Received response: %s in %u" CR, response.c_str(),
-                        millis() - p.timestamp);
-            *p.dest = String(response.c_str());
+
+//            LOGVF("[%s] responds in %lu", response, millis() - p.timestamp);
+            *p.dest = String(response);
+            p.dest->trim();
             lastSentTime = millis() + IN_COMMAND_TIME_GAP_MS;
             PT_SEM_SIGNAL(pt, p.sem);
           } else {
             // TODO: HARD ERROR
-            Log.error(
-                "Sem Queue does not have pending task but \"%s\" has "
-                "been received",
-                response.c_str());
+            LOGEF("No pending task but [%s] has been received",
+                  response);
+            buffer.flush();
           }
           continue;
         }
 
         // Otherwise, store this character for later.
         if (!buffer.push(recv)) {
-          Log.error("Recv buffer is full." CR);
+          LOGE("Recv buffer is full.");
         }
       } else {
         // This read round is end. Will see if more come later.
@@ -256,16 +253,15 @@ char FP50::daemon(struct pt *pt) {
     {
       if ((millis() - lastSentTime > COMMAND_TIME_GAP_MS) &&
           (cmdQueue.available()) && (xon) &&
-          !(IN_COMMAND_EXCLUSIVE && semQueue.available())) {
+          !(IN_COMMAND_EXCLUSIVE && semQueue.available() > 1)) {
         String cmd = cmdQueue.pop();
         if (!cmd) {
-          Log.error("Command is not valid" CR);
+          LOGE("Command is not valid");
         } else {
           serial.print(cmd);
           lastSentTime = millis();
           cmd.trim();
-          Log.verbose("Message sent @ %l: \"%s\". " CR, (uint32)lastSentTime,
-                      cmd.c_str());
+          LOGVF("Message sent @ %llu: \"%s\". ", lastSentTime, cmd.c_str());
         }
       }
     }

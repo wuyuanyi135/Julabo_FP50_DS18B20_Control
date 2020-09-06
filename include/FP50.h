@@ -6,14 +6,14 @@
 #define JULABO_FP50_DS18B20_CONTROL_FP50_H
 #include <circular_queue/circular_queue.h>
 #include "Arduino.h"
-#include "ArduinoLog.h"
+#include "debug.h"
 #include "pt/pt-sem.h"
 #include "pt/pt.h"
 #define QUEUE_SIZE 10
 #define RECV_BUFFER_SIZE 300
-#define COMMAND_TIME_GAP_MS 250
-#define IN_COMMAND_TIME_GAP_MS 10
-#define IN_COMMAND_TIMEOUT_MS 500
+#define COMMAND_TIME_GAP_MS 300
+#define IN_COMMAND_TIME_GAP_MS 30
+#define IN_COMMAND_TIMEOUT_MS 2000
 // When in command is waiting. Do not send more commands.
 #define IN_COMMAND_EXCLUSIVE 1
 
