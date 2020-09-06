@@ -1,33 +1,73 @@
-#include <Arduino.h>
 #include "FP50.h"
+#include "GDBStub.h"
 #include "pt/pt.h"
+#include <Arduino.h>
+#include <SoftwareSerial.h>
 
-HardwareSerial fp50Serial(2);
+SoftwareSerial fp50Serial;
 FP50 fp50(fp50Serial);
-struct pt* ptFP50;
-struct pt* ptInfo;
 
-PT_THREAD(print_info(struct pt* pt)) {
-  static struct pt* pt1;
+struct pt ptMain;
+struct pt ptBackground;
+
+PT_THREAD(print_info(struct pt *pt)) {
+  static AsyncPT pt1;
   static String ver;
 
   PT_BEGIN(pt);
-  PT_SPAWN(pt, pt1, fp50.get_version(pt1, ver));
-  Log.verbose("FP50 Version: %s" CR, ver.c_str());
+  Log.notice("Requesting FP50 Version..." CR);
+
+  PT_SPAWN(pt, &pt1.pt, fp50.get_version(pt1, ver));
+  Log.notice("FP50 Version: %s" CR, ver.c_str());
+  PT_END(pt);
+}
+
+/// Entry point of the async main function
+/// \param pt
+/// \return
+PT_THREAD(main_routine(struct pt *pt)) {
+  static struct pt ptInfo;
+  PT_BEGIN(pt);
+
+  // Print information
+  PT_SPAWN(pt, &ptInfo, print_info(&ptInfo));
+
+  // End of main routine.
+  Log.verbose("Main routine exits." CR);
+  while (true) {
+    PT_YIELD(pt);
+  }
+  PT_END(pt); // PT_END can revive the pt!!
+}
+
+PT_THREAD(background_routine(struct pt *pt)) {
+  static struct pt ptFP50;
+  PT_BEGIN(pt);
+
+  while (true) {
+    fp50.daemon(&ptFP50);
+    PT_YIELD(pt);
+  }
+
   PT_END(pt);
 }
 
 void setup() {
-  Log.begin(LOG_LEVEL_VERBOSE, &Serial);
-  fp50Serial.begin(9600);
-  fp50Serial.setTimeout(50);
+  Serial.begin(115200);
+  //  gdb_init();
 
-  PT_INIT(ptFP50);
-  PT_INIT(ptInfo);
+  Log.begin(LOG_LEVEL_VERBOSE, &Serial);
+  Log.verbose("Log module initialized." CR);
+  fp50Serial.begin(9600, SWSERIAL_8N1, D5, D6, false, 100, 100);
+  fp50Serial.setTimeout(50);
+  fp50.begin();
+  Log.verbose("fp50 serial initialized." CR);
+  PT_INIT(&ptMain);
+  PT_INIT(&ptBackground);
 }
 
 void loop() {
   // write your code here
-  print_info(ptInfo);
-  fp50.daemon(ptFP50);
+  main_routine(&ptMain);
+  background_routine(&ptBackground);
 }
