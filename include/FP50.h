@@ -9,6 +9,8 @@
 #include "debug.h"
 #include "pt/pt-sem.h"
 #include "pt/pt.h"
+#include "pt/asyncpt.h"
+
 #define QUEUE_SIZE 10
 #define RECV_BUFFER_SIZE 300
 #define COMMAND_TIME_GAP_MS 300
@@ -33,16 +35,6 @@ struct Resolvable {
   String *dest;
   String identifier;
   ulong timestamp;
-};
-
-struct AsyncPT {
-  struct pt pt {};
-  struct pt_sem sem {};
-  void init() {
-    PT_INIT(&pt);
-    PT_SEM_INIT(&sem, 0);
-  }
-  AsyncPT() { init(); }
 };
 
 // FP50 should be put in software handshake mode
