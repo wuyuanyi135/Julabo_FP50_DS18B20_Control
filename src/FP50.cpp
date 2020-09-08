@@ -9,7 +9,10 @@ FP50::FP50(Stream &serial)
       semQueue(QUEUE_SIZE),
       buffer((size_t)RECV_BUFFER_SIZE) {}
 
-void FP50::begin() { LOGVF("Receive buffer capacity: %zu", buffer.capacity()); }
+void FP50::begin() {
+  LOGVF("Receive buffer capacity: %zu", buffer.capacity());
+  serial.flush();
+}
 
 void FP50::select_setpoint(int id) {
   if (id > 2 || id < 0) return;
@@ -175,7 +178,12 @@ char FP50::get_pump_stage(AsyncPT &pt, double &pump) {
   PT_END(&pt.pt);
 }
 
-void FP50::queue_command(String command) { cmdQueue.push(command); }
+void FP50::queue_command(String command) {
+  if (!cmdQueue.push(command)) {
+    LOGEF("Failed to queue command %s", command.c_str());
+    return;
+  }
+}
 
 char FP50::daemon(struct pt *pt) {
   static int recv;
@@ -275,7 +283,12 @@ char FP50::daemon(struct pt *pt) {
 }
 void FP50::queue_command_with_response(String command, pt_sem &sem,
                                        String &recv) {
-  cmdQueue.push(command);
+  if (!cmdQueue.push(command)) {
+    command.trim();
+    LOGEF("Failed to push command %s", command.c_str());
+    sem.count++;
+    return;
+  }
   Resolvable r;
   r.sem = &sem;
   r.dest = &recv;

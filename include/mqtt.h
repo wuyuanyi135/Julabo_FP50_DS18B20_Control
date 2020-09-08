@@ -22,6 +22,7 @@
 #define MQTT_FP50_POWER_TOPIC "waterbath/power"
 #define MQTT_FP50_SETPOINT_TOPIC "waterbath/setpoint"
 #define MQTT_FP50_ENABLE_TOPIC "waterbath/enable"
+#define MQTT_FP50_COMMAND_TOPIC "waterbath/command"
 #define MQTT_LOG_TOPIC "log/TController"
 
 class mqtt {
@@ -39,7 +40,7 @@ class mqtt {
 
  public:
   uint ds18Interval{1000};
-  uint fp50Interval{2000};
+  uint fp50Interval{3000};
 
  private:
   uint ds18Last;

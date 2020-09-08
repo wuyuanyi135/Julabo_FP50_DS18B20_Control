@@ -13,8 +13,8 @@
 
 #define QUEUE_SIZE 10
 #define RECV_BUFFER_SIZE 300
-#define COMMAND_TIME_GAP_MS 300
-#define IN_COMMAND_TIME_GAP_MS 30
+#define COMMAND_TIME_GAP_MS 400
+#define IN_COMMAND_TIME_GAP_MS 50
 #define IN_COMMAND_TIMEOUT_MS 2000
 // When in command is waiting. Do not send more commands.
 #define IN_COMMAND_EXCLUSIVE 1
@@ -126,7 +126,7 @@ class FP50 {
  public:
   bool ok = false;
 
- private:
+ public:
   void queue_command(String command);
   void queue_command_with_response(String command, pt_sem &sem, String &recv);
 

@@ -31,7 +31,6 @@ PT_THREAD(mqtt::begin(struct pt* pt)) {
   // Connect to MQTT
   mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
   mqttClient.setCallback([&](char* topic, byte* payload, unsigned int length) {
-    String p = String((char*)payload);
     LOGVF("Topic: %s; Length: %u;", topic, length);
     if (0 == strcmp(topic, MQTT_FP50_SETPOINT_TOPIC)) {
       double d = String((char*)payload).toDouble();
@@ -39,6 +38,10 @@ PT_THREAD(mqtt::begin(struct pt* pt)) {
     } else if (0 == strcmp(topic, MQTT_FP50_ENABLE_TOPIC)) {
       int d = String((char*)payload).toInt();
       fp50.switch_power(d);
+    } else if (0 == strcmp(topic, MQTT_FP50_COMMAND_TOPIC)) {
+      String d = (char*)payload;
+      d = d + "\r";
+      fp50.queue_command(d);
     }
   });
 
@@ -53,6 +56,7 @@ PT_THREAD(mqtt::begin(struct pt* pt)) {
   // After connect
   if(!mqttClient.subscribe(MQTT_FP50_SETPOINT_TOPIC)) LOGE("Failed to subscribe setpoint");
   if(!mqttClient.subscribe(MQTT_FP50_ENABLE_TOPIC)) LOGE("Failed to subscribe enable");
+  if(!mqttClient.subscribe(MQTT_FP50_COMMAND_TOPIC)) LOGE("Failed to subscribe command");
 
   PT_END(pt);
 }
