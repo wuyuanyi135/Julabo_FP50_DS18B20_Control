@@ -50,6 +50,8 @@
 #define __PT_H__
 
 #include "lc.h"
+#define PT_ONCE(r, f) \
+  if (PT_SCHEDULE(r)) r = f;
 
 struct pt {
   lc_t lc;

@@ -14,7 +14,7 @@
 
 #define WIFI_SSID "DCHost"
 #define WIFI_PASS "dchost000000"
-#define WIFI_TIMEOUT  10000
+#define WIFI_TIMEOUT_S  30
 #define MQTT_SERVER "192.168.43.1"
 #define MQTT_PORT 1883
 #define MQTT_DS18_TOPIC "crystallizer/temperature"
@@ -33,13 +33,13 @@ class mqtt {
   mqtt(FP50& fp50, TMeter& tm);
 
  public:
-  void begin();
+  PT_THREAD( begin(struct pt* pt));
   PT_THREAD(daemon(struct pt* pt));
   void logging(String info);
 
  public:
-  uint ds18Interval;
-  uint fp50Interval;
+  uint ds18Interval{1000};
+  uint fp50Interval{2000};
 
  private:
   uint ds18Last;

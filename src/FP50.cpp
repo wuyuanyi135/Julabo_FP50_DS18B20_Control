@@ -9,9 +9,7 @@ FP50::FP50(Stream &serial)
       semQueue(QUEUE_SIZE),
       buffer((size_t)RECV_BUFFER_SIZE) {}
 
-void FP50::begin() {
-  LOGVF("Receive buffer capacity: %d", (int)buffer.capacity());
-}
+void FP50::begin() { LOGVF("Receive buffer capacity: %zu", buffer.capacity()); }
 
 void FP50::select_setpoint(int id) {
   if (id > 2 || id < 0) return;
@@ -182,9 +180,15 @@ void FP50::queue_command(String command) { cmdQueue.push(command); }
 char FP50::daemon(struct pt *pt) {
   static int recv;
   static char response[128];
+  static AsyncPT ptCheck;
+  static char retCheck = 0;
+  static bool ready = false;
   PT_BEGIN(pt);
 
   while (true) {
+    // Run once
+    PT_ONCE(retCheck, check_ready(ptCheck, ready));
+
     // Clear up timeout in command
     {
       if (semQueue.available()) {
@@ -221,19 +225,19 @@ char FP50::daemon(struct pt *pt) {
           LOGVF("CR received. Size=%zu", size);
 
           buffer.pop_n(response, size);
-          response[size + 1] = '\0'; // overwrite LF
+          response[size + 1] = '\0';  // overwrite LF
           if (semQueue.available()) {
             const Resolvable &p = semQueue.pop();
 
-//            LOGVF("[%s] responds in %lu", response, millis() - p.timestamp);
+            //            LOGVF("[%s] responds in %lu", response, millis() -
+            //            p.timestamp);
             *p.dest = String(response);
             p.dest->trim();
             lastSentTime = millis() + IN_COMMAND_TIME_GAP_MS;
             PT_SEM_SIGNAL(pt, p.sem);
           } else {
             // TODO: HARD ERROR
-            LOGEF("No pending task but [%s] has been received",
-                  response);
+            LOGEF("No pending task but [%s] has been received", response);
             buffer.flush();
           }
           continue;
@@ -278,4 +282,13 @@ void FP50::queue_command_with_response(String command, pt_sem &sem,
   r.identifier = command;
   r.timestamp = millis();
   semQueue.push(r);
+}
+char FP50::check_ready(AsyncPT &pt, bool &ready) {
+  static AsyncPT pt1;
+  static String ver;
+  PT_BEGIN(&pt.pt);
+  PT_SPAWN(&pt.pt, &pt1.pt, get_version(pt1, ver));
+  ok = !ver.isEmpty();
+  ready = ok;
+  PT_END(&pt.pt);
 }

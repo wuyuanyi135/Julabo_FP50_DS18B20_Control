@@ -7,8 +7,10 @@
 void TMeter::begin() {
   dt.begin();
   dt.setResolution(DS18_RESOLUTION);
+  devCount = dt.getDeviceCount();
+  LOGVF("Found %d DS18 devices", devCount);
 }
-bool TMeter::ok() { return true; }
+bool TMeter::ok() { return devCount > 0; }
 char TMeter::get_temperature(TMeterPT& pt, float& temperature) {
   PT_BEGIN(&pt.pt);
   if (ok()) {

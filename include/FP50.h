@@ -7,9 +7,9 @@
 #include <circular_queue/circular_queue.h>
 #include "Arduino.h"
 #include "debug.h"
+#include "pt/asyncpt.h"
 #include "pt/pt-sem.h"
 #include "pt/pt.h"
-#include "pt/asyncpt.h"
 
 #define QUEUE_SIZE 10
 #define RECV_BUFFER_SIZE 300
@@ -113,6 +113,8 @@ class FP50 {
   /// \return
   PT_THREAD(get_pump_stage(AsyncPT &pt, double &pump));
 
+  PT_THREAD(check_ready(AsyncPT &pt, bool &ready));
+
  private:
   Stream &serial;
   bool xon = true;
@@ -120,6 +122,9 @@ class FP50 {
   circular_queue<Resolvable> semQueue;
   uint64 lastSentTime;
   circular_queue<char> buffer;
+
+ public:
+  bool ok = false;
 
  private:
   void queue_command(String command);
