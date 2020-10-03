@@ -17,21 +17,21 @@ PT_THREAD(mqtt::begin(struct pt* pt)) {
 
   now = millis();
   while (WiFi.status() != WL_CONNECTED && cnt < WIFI_TIMEOUT_S) {
-    LOGN("WiFi is connecting..");
+//    LOGN("WiFi is connecting..");
     cnt++;
     PT_YIELD_UNTIL(pt, millis() - now > 1000);
     now = millis();
   }
 
   if (cnt == WIFI_TIMEOUT_S) {
-    LOGE("Failed to connect to WiFi");
+//    LOGE("Failed to connect to WiFi");
     PT_EXIT(pt);
   }
 
   // Connect to MQTT
   mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
   mqttClient.setCallback([&](char* topic, byte* payload, unsigned int length) {
-    LOGVF("Topic: %s; Length: %u;", topic, length);
+//    LOGVF("Topic: %s; Length: %u;", topic, length);
     if (0 == strcmp(topic, MQTT_FP50_SETPOINT_TOPIC)) {
       double d = String((char*)payload).toDouble();
       fp50.set_setpoint(d, 0);
@@ -49,14 +49,20 @@ PT_THREAD(mqtt::begin(struct pt* pt)) {
 
   now = millis();
   while (!mqttClient.connected()) {
-    LOGV("MQTT connecting");
+//    LOGV("MQTT connecting");
     PT_YIELD_UNTIL(pt, millis() - now > 1000);
   }
 
   // After connect
-  if(!mqttClient.subscribe(MQTT_FP50_SETPOINT_TOPIC)) LOGE("Failed to subscribe setpoint");
-  if(!mqttClient.subscribe(MQTT_FP50_ENABLE_TOPIC)) LOGE("Failed to subscribe enable");
-  if(!mqttClient.subscribe(MQTT_FP50_COMMAND_TOPIC)) LOGE("Failed to subscribe command");
+  if(!mqttClient.subscribe(MQTT_FP50_SETPOINT_TOPIC)) {
+    // LOGE("Failed to subscribe setpoint");
+  }
+  if(!mqttClient.subscribe(MQTT_FP50_ENABLE_TOPIC)) {
+    // LOGE("Failed to subscribe enable");
+  }
+  if(!mqttClient.subscribe(MQTT_FP50_COMMAND_TOPIC)) {
+    // LOGE("Failed to subscribe command");
+  }
 
   PT_END(pt);
 }
@@ -88,7 +94,7 @@ char mqtt::publish_ds18(struct pt* pt) {
   if (millis() - ds18Last > ds18Interval) {
     PT_SPAWN(pt, &pt1.pt, tm.get_temperature(pt1, temp));
     mqttClient.publish(MQTT_DS18_TOPIC, String(temp).c_str(), false);
-    LOGV("Published DS18 message");
+    // LOGV("Published DS18 message");
     ds18Last = millis();
   }
   PT_END(pt);
@@ -111,7 +117,7 @@ char mqtt::publish_fp50(struct pt* pt) {
 
     mqttClient.publish(MQTT_FP50_TEMP_TOPIC, String(temp).c_str(), false);
     mqttClient.publish(MQTT_FP50_POWER_TOPIC, String(power).c_str(), false);
-    LOGV("Published fp50 message");
+    // LOGV("Published fp50 message");
     fp50Last = millis();
   }
   PT_END(pt);

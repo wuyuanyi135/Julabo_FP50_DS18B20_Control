@@ -8,7 +8,7 @@ void TMeter::begin() {
   dt.begin();
   dt.setResolution(DS18_RESOLUTION);
   devCount = dt.getDeviceCount();
-  LOGVF("Found %d DS18 devices", devCount);
+//  LOGVF("Found %d DS18 devices", devCount);
 }
 bool TMeter::ok() { return devCount > 0; }
 char TMeter::get_temperature(TMeterPT& pt, float& temperature) {
@@ -20,12 +20,12 @@ char TMeter::get_temperature(TMeterPT& pt, float& temperature) {
                    millis() - pt.time > 750 / (1 << (12 - DS18_RESOLUTION)));
     const float t = dt.getTempCByIndex(0);
     if (t == DEVICE_DISCONNECTED_C) {
-      LOGE("DS18 disconnected.");
+//      LOGE("DS18 disconnected.");
       temperature = t;
       led.error();
     } else {
       temperature = t;
-      LOGVF("Temperature = %f", t);
+//      LOGVF("Temperature = %f", t);
     }
     PT_SEM_SIGNAL(&pt.pt, &pt.sem);
   }
